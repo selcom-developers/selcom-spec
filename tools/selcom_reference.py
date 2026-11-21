@@ -272,6 +272,12 @@ STALE = "STALE"
 REPLAY = "REPLAY"
 VERIFICATIONS = (VALID, UNSIGNED, INVALID, STALE, REPLAY)
 
+# The signing string joins "k=v" pairs with "&" and nothing marks where a value
+# ends, so a value containing "&" can imitate further fields. A verifier
+# therefore insists that these two fields are always signed, and refuses any
+# signed name or value that contains "&". See docs/webhooks.md.
+REQUIRED_SIGNED_FIELDS = ("order_id", "transid")
+
 
 def _header(headers: Mapping[str, str], name: str) -> str | None:
     for key, value in headers.items():
@@ -314,13 +320,19 @@ def verify_webhook(
         return INVALID
     if not isinstance(body, dict) or not fields_header:
         return INVALID
+    names = fields_header.split(",")
+    if any(required not in names for required in REQUIRED_SIGNED_FIELDS):
+        return INVALID
     flat = []
-    for field in fields_header.split(","):
+    for field in names:
         found, value = _lookup(body, field)
-        if not found:
+        if not found or "&" in field:
             return INVALID
         try:
-            flat.append((field, normalise_value(field, value)))
+            normalised = normalise_value(field, value)
+            if "&" in format_value(normalised):
+                return INVALID
+            flat.append((field, normalised))
         except SigningError:
             return INVALID
     expected = hs256_digest(secret, signing_string(timestamp, flat))
