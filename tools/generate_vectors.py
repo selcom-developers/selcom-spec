@@ -1,4 +1,4 @@
-"""Generate vectors/signing.json from the reference implementation.
+"""Generate vectors/signing.json (and the rule-dependent webhook samples) from the reference.
 
     python tools/generate_vectors.py           # rewrite vectors/signing.json
     python tools/generate_vectors.py --check   # exit 1 if the committed file drifts
@@ -19,10 +19,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from selcom_reference import SigningError, sign_request  # noqa: E402
+from selcom_reference import (  # noqa: E402
+    SigningError,
+    hs256_digest,
+    sign_request,
+    signing_string,
+    verify_webhook,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "vectors" / "signing.json"
+WEBHOOK_OUTPUT = ROOT / "vectors" / "responses" / "checkout.webhook.json"
 
 # Sample credentials printed in Selcom's public developer documentation.
 # They are illustrative values, not working credentials.
@@ -467,6 +474,113 @@ def build() -> dict:
     }
 
 
+# --------------------------------------------------------------------------
+# Webhook samples that depend on the verifier's signed-field rules.
+# The rest of checkout.webhook.json is maintained by hand; these are rebuilt
+# here (appended, in this order) so each digest is computed, never typed.
+# --------------------------------------------------------------------------
+
+WEBHOOK_FIELDS = ["transid", "order_id", "reference", "result", "resultcode", "payment_status"]
+WEBHOOK_TS = "2026-11-21T10:30:46+03:00"
+
+# The delivery the gateway really signed: order ORD-2101 paid.
+LEGIT = {
+    "transid": "TXN-WLT-2101",
+    "order_id": "ORD-2101",
+    "reference": "REF0000002101",
+    "result": "SUCCESS",
+    "resultcode": "000",
+    "payment_status": "COMPLETED",
+}
+
+
+def _webhook_sample(name: str, description: str, signed: dict, body: dict, fields: list[str]) -> dict:
+    """A delivery whose Digest is computed over `signed`, sent as `body` under `fields`."""
+    digest = hs256_digest(DOCS_SECRET, signing_string(WEBHOOK_TS, list(signed.items())))
+    return {
+        "name": name,
+        "description": description,
+        "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "SELCOM MjAyY2I5NjJhYzU5MDc1Yjk2NGIwNzE1MmQyMzRiNzA=",
+            "Digest-Method": "HS256",
+            "Digest": digest,
+            "Timestamp": WEBHOOK_TS,
+            "Signed-Fields": ",".join(fields),
+        },
+        "raw_body": json.dumps(body, separators=(",", ":")),
+        "expected_verification": "INVALID",
+        "expected_amount_tzs": 10000,
+    }
+
+
+def webhook_samples() -> list[dict]:
+    extra = {"channel": "AIRTELMONEY", "amount": "10000", "phone": "255700000001"}
+
+    def without(field: str) -> dict:
+        return {k: v for k, v in LEGIT.items() if k != field}
+
+    forged_transid = "&".join(
+        [LEGIT["transid"]] + [f"{k}={v}" for k, v in LEGIT.items() if k != "transid"]
+    )
+    return [
+        _webhook_sample(
+            "signed-fields-missing-order-id",
+            "Correctly signed, but Signed-Fields leaves out order_id, so the order it names is not vouched for. INVALID.",
+            without("order_id"),
+            {**LEGIT, **extra},
+            [f for f in WEBHOOK_FIELDS if f != "order_id"],
+        ),
+        _webhook_sample(
+            "signed-fields-missing-transid",
+            "Correctly signed, but Signed-Fields leaves out transid, so the payment attempt it names is not vouched for. INVALID.",
+            without("transid"),
+            {**LEGIT, **extra},
+            [f for f in WEBHOOK_FIELDS if f != "transid"],
+        ),
+        _webhook_sample(
+            "signed-value-with-ampersand",
+            "Forgery: Signed-Fields names only transid, whose value carries the rest of the genuine ORD-2101 signing string after an ampersand. The digest is the genuine one, so the string matches, while the body's order_id (ORD-2102) is not signed at all. INVALID.",
+            LEGIT,
+            {**LEGIT, "transid": forged_transid, "order_id": "ORD-2102", **extra},
+            ["transid"],
+        ),
+        _webhook_sample(
+            "signed-field-name-with-ampersand",
+            "The same trick through a field name: the body has a key containing ampersands and Signed-Fields names it. INVALID.",
+            LEGIT,
+            {
+                "transid": LEGIT["transid"],
+                "order_id": LEGIT["order_id"],
+                "reference=" + LEGIT["reference"] + "&result": LEGIT["result"],
+                "resultcode": LEGIT["resultcode"],
+                "payment_status": LEGIT["payment_status"],
+                **extra,
+            },
+            ["transid", "order_id", "reference=" + LEGIT["reference"] + "&result", "resultcode", "payment_status"],
+        ),
+    ]
+
+
+def build_webhook() -> str:
+    doc = json.loads(WEBHOOK_OUTPUT.read_text(encoding="utf-8"))
+    generated = webhook_samples()
+    names = {sample["name"] for sample in generated}
+    kept = [sample for sample in doc["samples"] if sample["name"] not in names]
+    doc["samples"] = kept + generated
+    # Every sample, new or old, must still get the verdict it claims.
+    config = doc["verification"]
+    seen: set[str] = set()
+    from datetime import datetime
+
+    now = datetime.fromisoformat(config["now"])
+    for sample in doc["samples"]:
+        got = verify_webhook(sample["headers"], sample["raw_body"], config["secret"], now, config["window_seconds"], seen)
+        if got != sample["expected_verification"]:
+            raise SystemExit(f"webhook sample {sample['name']}: expected {sample['expected_verification']}, reference gives {got}")
+    return json.dumps(doc, indent=2, ensure_ascii=False) + chr(10)
+
+
 def _is_pair_list(value: object) -> bool:
     return (
         isinstance(value, list)
@@ -504,7 +618,12 @@ def main() -> int:
     text = render(build())
     if json.loads(text) != json.loads(json.dumps(build(), ensure_ascii=False)):
         raise SystemExit("renderer changed the data")
+    webhook_text = build_webhook()
     if args.check:
+        current_webhook = WEBHOOK_OUTPUT.read_text(encoding="utf-8").replace("\r\n", "\n")
+        if current_webhook != webhook_text:
+            print(f"{WEBHOOK_OUTPUT.relative_to(ROOT)} is out of date. Run: python tools/generate_vectors.py")
+            return 1
         current = OUTPUT.read_text(encoding="utf-8").replace("\r\n", "\n") if OUTPUT.exists() else ""
         if current != text:
             diff = difflib.unified_diff(
@@ -520,6 +639,8 @@ def main() -> int:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
+    with WEBHOOK_OUTPUT.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(webhook_text)
     doc = json.loads(text)
     print(f"Wrote {OUTPUT.relative_to(ROOT)}: {len(doc['cases'])} cases, {len(doc['rejects'])} rejects.")
     return 0

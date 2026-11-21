@@ -134,6 +134,8 @@ Digest:         m8KyUwdkSqajdVVT3OQqTkeYncbc+INQ+owJI6w1+QI=
 
 The query string is encoded; the signing string is not.
 
+**Note: `&` in a value.** Because the signing string is not encoded, a value containing `&` gives the same digest as separate fields: a `utilityref` of `X&transid=TXN-1` signs the same as a `utilityref` of `X` followed by a `transid` of `TXN-1`. For requests this is not exploitable by a third party, since the client signs its own requests and the gateway receives the real query string or body. It is why verifiers of webhooks, which are signed by someone else, apply extra rules: see [webhooks.md](webhooks.md#verification). Request signing is unchanged, and the `reserved-characters-*` vectors stay valid.
+
 ## Pitfalls
 
 **Field order**

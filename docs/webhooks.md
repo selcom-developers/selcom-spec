@@ -40,11 +40,15 @@ Clients ship `verify(headers, rawBody) -> Verdict`, configured with the secret, 
 1. If there is no `Digest` header: **`UNSIGNED`**. There is nothing to check; the order-status confirmation is the only protection.
 2. If `Digest` is present but empty, or `Digest-Method` is not a method the client is configured for: **`INVALID`**.
 3. If `Timestamp` does not match the format in [signing.md](signing.md#timestamp), or the body is not a JSON object, or `Signed-Fields` is empty: **`INVALID`**.
-4. For each name in `Signed-Fields`, in order, take the value from the body (a dotted name may also be found by walking nested objects). If any is missing: **`INVALID`**. Normalise the values exactly as for requests.
-5. Build the signing string from the received `Timestamp` and those values, compute the digest, and compare it with `Digest` **in constant time** (`hash_equals`, `MessageDigest.isEqual`, `crypto.timingSafeEqual`). If they differ: **`INVALID`**.
-6. If the timestamp is further than the window (default 300 seconds, configurable) from the current time, in either direction: **`STALE`**.
-7. If the replay store has seen this digest within the window: **`REPLAY`**. Otherwise record it.
-8. **`VALID`**.
+4. If `Signed-Fields` does not include both `order_id` and `transid`: **`INVALID`**. Selcom's documented list (`transid,order_id,reference,result,resultcode,payment_status`) does.
+5. For each name in `Signed-Fields`, in order, take the value from the body (a dotted name may also be found by walking nested objects). If any is missing: **`INVALID`**. Normalise the values exactly as for requests. This step runs before the digest check on data anyone can send, so it must be cheap and must not throw: a number that is not a whole number within ±(2^53 − 1) (including huge exponents such as `1e100000000` and tiny ones such as `1e-999999999`) is **`INVALID`**, decided without expanding the number.
+6. If any signed name, or the text of any signed value, contains `&`: **`INVALID`**.
+7. Build the signing string from the received `Timestamp` and those values, compute the digest, and compare it with `Digest` **in constant time** (`hash_equals`, `MessageDigest.isEqual`, `crypto.timingSafeEqual`). If they differ: **`INVALID`**.
+8. If the timestamp is further than the window (default 300 seconds, configurable) from the current time, in either direction: **`STALE`**.
+9. If the replay store has seen this digest within the window: **`REPLAY`**. Otherwise record it, and keep it until max(now, `Timestamp`) + window, so a delivery dated ahead of the receiver's clock cannot be replayed after its entry expires.
+10. **`VALID`**.
+
+**Why steps 4 and 6.** The signing string joins `name=value` pairs with `&` and nothing marks where a value ends, so a value containing `&` gives the same string as several separate fields. A forger who holds one genuine signed delivery can send `Signed-Fields: transid` with a `transid` of `T9&order_id=ORD-A&reference=...&payment_status=COMPLETED`, which reproduces the genuine signing string and passes the digest check, while the body's `order_id` (say `ORD-B`) is not signed at all (samples `signed-value-with-ampersand` and `signed-field-name-with-ampersand`). Requiring `order_id` and `transid` to be signed (samples `signed-fields-missing-order-id` and `signed-fields-missing-transid`) means the order and the payment attempt are always vouched for, and refusing `&` in signed names and values removes the ambiguity itself. Neither rule changes how requests are signed.
 
 | Verdict | Respond | Process? |
 |---|---|---|
