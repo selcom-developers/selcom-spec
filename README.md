@@ -2,6 +2,8 @@
 
 Shared API notes, rules and test vectors for the community Selcom API clients: Java, Node/TypeScript, framework-agnostic PHP, and a Laravel package.
 
+Documentation: <https://selcom-developers.github.io/>
+
 The community clients must sign requests identically, read results identically, and pass the same test vectors.
 
 > **Not affiliated with Selcom Paytech Ltd.** For API access, credentials, contracts and support, go to Selcom: <https://developers.selcommobile.com/>.
