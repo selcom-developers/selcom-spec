@@ -272,6 +272,10 @@ STALE = "STALE"
 REPLAY = "REPLAY"
 VERIFICATIONS = (VALID, UNSIGNED, INVALID, STALE, REPLAY)
 
+# Webhook rules (docs/webhooks.md, verification steps 4 and 6): these fields must
+# always be signed, and no signed name or value may contain "&".
+REQUIRED_SIGNED_FIELDS = ("order_id", "transid")
+
 
 def _header(headers: Mapping[str, str], name: str) -> str | None:
     for key, value in headers.items():
@@ -314,13 +318,19 @@ def verify_webhook(
         return INVALID
     if not isinstance(body, dict) or not fields_header:
         return INVALID
+    names = fields_header.split(",")
+    if any(required not in names for required in REQUIRED_SIGNED_FIELDS):
+        return INVALID
     flat = []
-    for field in fields_header.split(","):
+    for field in names:
         found, value = _lookup(body, field)
-        if not found:
+        if not found or "&" in field:
             return INVALID
         try:
-            flat.append((field, normalise_value(field, value)))
+            normalised = normalise_value(field, value)
+            if "&" in format_value(normalised):
+                return INVALID
+            flat.append((field, normalised))
         except SigningError:
             return INVALID
     expected = hs256_digest(secret, signing_string(timestamp, flat))
