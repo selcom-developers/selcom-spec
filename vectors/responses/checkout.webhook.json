@@ -169,7 +169,7 @@
     },
     {
       "name": "signed-fields-missing-order-id",
-      "description": "Correctly signed, but Signed-Fields leaves out order_id, so the order it names is not vouched for. INVALID.",
+      "description": "Correctly signed, but Signed-Fields leaves out order_id. INVALID.",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "SELCOM MjAyY2I5NjJhYzU5MDc1Yjk2NGIwNzE1MmQyMzRiNzA=",
@@ -184,7 +184,7 @@
     },
     {
       "name": "signed-fields-missing-transid",
-      "description": "Correctly signed, but Signed-Fields leaves out transid, so the payment attempt it names is not vouched for. INVALID.",
+      "description": "Correctly signed, but Signed-Fields leaves out transid. INVALID.",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "SELCOM MjAyY2I5NjJhYzU5MDc1Yjk2NGIwNzE1MmQyMzRiNzA=",
@@ -199,31 +199,31 @@
     },
     {
       "name": "signed-value-with-ampersand",
-      "description": "Forgery: Signed-Fields names only transid, whose value carries the rest of the genuine ORD-2101 signing string after an ampersand. The digest is the genuine one, so the string matches, while the body's order_id (ORD-2102) is not signed at all. INVALID.",
+      "description": "Correctly signed, but a signed value contains '&'. INVALID.",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "SELCOM MjAyY2I5NjJhYzU5MDc1Yjk2NGIwNzE1MmQyMzRiNzA=",
         "Digest-Method": "HS256",
-        "Digest": "CmsLlK+ZrDb0Yw1HkrZERju7RBlpw/XE/Wx9oRipEKg=",
+        "Digest": "eP6DuS1sg6x/6Dz1+UDDRFj4GuS1vYahNrCyZ8j1MQo=",
         "Timestamp": "2026-11-21T10:30:46+03:00",
-        "Signed-Fields": "transid"
+        "Signed-Fields": "transid,order_id,reference,result,resultcode,payment_status"
       },
-      "raw_body": "{\"transid\":\"TXN-WLT-2101&order_id=ORD-2101&reference=REF0000002101&result=SUCCESS&resultcode=000&payment_status=COMPLETED\",\"order_id\":\"ORD-2102\",\"reference\":\"REF0000002101\",\"result\":\"SUCCESS\",\"resultcode\":\"000\",\"payment_status\":\"COMPLETED\",\"channel\":\"AIRTELMONEY\",\"amount\":\"10000\",\"phone\":\"255700000001\"}",
+      "raw_body": "{\"transid\":\"TXN-WLT-2101&x\",\"order_id\":\"ORD-2101\",\"reference\":\"REF0000002101\",\"result\":\"SUCCESS\",\"resultcode\":\"000\",\"payment_status\":\"COMPLETED\",\"channel\":\"AIRTELMONEY\",\"amount\":\"10000\",\"phone\":\"255700000001\"}",
       "expected_verification": "INVALID",
       "expected_amount_tzs": 10000
     },
     {
       "name": "signed-field-name-with-ampersand",
-      "description": "The same trick through a field name: the body has a key containing ampersands and Signed-Fields names it. INVALID.",
+      "description": "Correctly signed, but a signed field name contains '&'. INVALID.",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "SELCOM MjAyY2I5NjJhYzU5MDc1Yjk2NGIwNzE1MmQyMzRiNzA=",
         "Digest-Method": "HS256",
-        "Digest": "CmsLlK+ZrDb0Yw1HkrZERju7RBlpw/XE/Wx9oRipEKg=",
+        "Digest": "8sLwx+NeDcVWmNDtaU2r+KJTDU9v7ishJnh7NSwhCDo=",
         "Timestamp": "2026-11-21T10:30:46+03:00",
-        "Signed-Fields": "transid,order_id,reference=REF0000002101&result,resultcode,payment_status"
+        "Signed-Fields": "transid,order_id,ref&x,result,resultcode,payment_status"
       },
-      "raw_body": "{\"transid\":\"TXN-WLT-2101\",\"order_id\":\"ORD-2101\",\"reference=REF0000002101&result\":\"SUCCESS\",\"resultcode\":\"000\",\"payment_status\":\"COMPLETED\",\"channel\":\"AIRTELMONEY\",\"amount\":\"10000\",\"phone\":\"255700000001\"}",
+      "raw_body": "{\"transid\":\"TXN-WLT-2101\",\"order_id\":\"ORD-2101\",\"ref&x\":\"REF0000002101\",\"result\":\"SUCCESS\",\"resultcode\":\"000\",\"payment_status\":\"COMPLETED\",\"channel\":\"AIRTELMONEY\",\"amount\":\"10000\",\"phone\":\"255700000001\"}",
       "expected_verification": "INVALID",
       "expected_amount_tzs": 10000
     }

@@ -520,44 +520,43 @@ def webhook_samples() -> list[dict]:
     def without(field: str) -> dict:
         return {k: v for k, v in LEGIT.items() if k != field}
 
-    forged_transid = "&".join(
-        [LEGIT["transid"]] + [f"{k}={v}" for k, v in LEGIT.items() if k != "transid"]
-    )
+    amp_value = {**LEGIT, "transid": LEGIT["transid"] + "&x"}
+    amp_name = {
+        "transid": LEGIT["transid"],
+        "order_id": LEGIT["order_id"],
+        "ref&x": LEGIT["reference"],
+        "result": LEGIT["result"],
+        "resultcode": LEGIT["resultcode"],
+        "payment_status": LEGIT["payment_status"],
+    }
     return [
         _webhook_sample(
             "signed-fields-missing-order-id",
-            "Correctly signed, but Signed-Fields leaves out order_id, so the order it names is not vouched for. INVALID.",
+            "Correctly signed, but Signed-Fields leaves out order_id. INVALID.",
             without("order_id"),
             {**LEGIT, **extra},
             [f for f in WEBHOOK_FIELDS if f != "order_id"],
         ),
         _webhook_sample(
             "signed-fields-missing-transid",
-            "Correctly signed, but Signed-Fields leaves out transid, so the payment attempt it names is not vouched for. INVALID.",
+            "Correctly signed, but Signed-Fields leaves out transid. INVALID.",
             without("transid"),
             {**LEGIT, **extra},
             [f for f in WEBHOOK_FIELDS if f != "transid"],
         ),
         _webhook_sample(
             "signed-value-with-ampersand",
-            "Forgery: Signed-Fields names only transid, whose value carries the rest of the genuine ORD-2101 signing string after an ampersand. The digest is the genuine one, so the string matches, while the body's order_id (ORD-2102) is not signed at all. INVALID.",
-            LEGIT,
-            {**LEGIT, "transid": forged_transid, "order_id": "ORD-2102", **extra},
-            ["transid"],
+            "Correctly signed, but a signed value contains '&'. INVALID.",
+            amp_value,
+            {**amp_value, **extra},
+            WEBHOOK_FIELDS,
         ),
         _webhook_sample(
             "signed-field-name-with-ampersand",
-            "The same trick through a field name: the body has a key containing ampersands and Signed-Fields names it. INVALID.",
-            LEGIT,
-            {
-                "transid": LEGIT["transid"],
-                "order_id": LEGIT["order_id"],
-                "reference=" + LEGIT["reference"] + "&result": LEGIT["result"],
-                "resultcode": LEGIT["resultcode"],
-                "payment_status": LEGIT["payment_status"],
-                **extra,
-            },
-            ["transid", "order_id", "reference=" + LEGIT["reference"] + "&result", "resultcode", "payment_status"],
+            "Correctly signed, but a signed field name contains '&'. INVALID.",
+            amp_name,
+            {**amp_name, **extra},
+            list(amp_name),
         ),
     ]
 

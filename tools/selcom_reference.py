@@ -272,10 +272,8 @@ STALE = "STALE"
 REPLAY = "REPLAY"
 VERIFICATIONS = (VALID, UNSIGNED, INVALID, STALE, REPLAY)
 
-# The signing string joins "k=v" pairs with "&" and nothing marks where a value
-# ends, so a value containing "&" can imitate further fields. A verifier
-# therefore insists that these two fields are always signed, and refuses any
-# signed name or value that contains "&". See docs/webhooks.md.
+# Webhook rules (docs/webhooks.md, verification steps 4 and 6): these fields must
+# always be signed, and no signed name or value may contain "&".
 REQUIRED_SIGNED_FIELDS = ("order_id", "transid")
 
 

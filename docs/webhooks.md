@@ -48,8 +48,6 @@ Clients ship `verify(headers, rawBody) -> Verdict`, configured with the secret, 
 9. If the replay store has seen this digest within the window: **`REPLAY`**. Otherwise record it, and keep it until max(now, `Timestamp`) + window, so a delivery dated ahead of the receiver's clock cannot be replayed after its entry expires.
 10. **`VALID`**.
 
-**Why steps 4 and 6.** The signing string joins `name=value` pairs with `&` and nothing marks where a value ends, so a value containing `&` gives the same string as several separate fields. A forger who holds one genuine signed delivery can send `Signed-Fields: transid` with a `transid` of `T9&order_id=ORD-A&reference=...&payment_status=COMPLETED`, which reproduces the genuine signing string and passes the digest check, while the body's `order_id` (say `ORD-B`) is not signed at all (samples `signed-value-with-ampersand` and `signed-field-name-with-ampersand`). Requiring `order_id` and `transid` to be signed (samples `signed-fields-missing-order-id` and `signed-fields-missing-transid`) means the order and the payment attempt are always vouched for, and refusing `&` in signed names and values removes the ambiguity itself. Neither rule changes how requests are signed.
-
 | Verdict | Respond | Process? |
 |---|---|---|
 | `VALID` | 200 | Yes, then confirm with order-status |

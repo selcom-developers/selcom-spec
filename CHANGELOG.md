@@ -2,16 +2,18 @@
 
 All notable changes to this specification are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-11-21
+
+### Changed
+
+- Documentation wording and webhook sample data. Verification rules and `vectors/signing.json` are unchanged.
+
 ## [0.2.0] - 2026-11-21
-
-### Security
-
-- Webhook verification closes a forgery in which a value containing `&` imitates further signed fields. A delivery with `Signed-Fields: transid` and a `transid` carrying the rest of a genuine signing string verified as `VALID` while its `order_id` was unsigned. See [docs/webhooks.md](docs/webhooks.md#verification).
 
 ### Changed
 
 - `docs/webhooks.md`: a delivery is `INVALID` when `Signed-Fields` does not include both `order_id` and `transid`, and when any signed name or value contains `&`.
-- `docs/signing.md`: a note that `&` in a request value signs like separate fields, why this is not exploitable for requests, and that request signing is unchanged.
+- `docs/signing.md`: a note on `&` in request values; request signing is unchanged.
 - Webhook verification: value normalisation before the digest check must be bounded and must not throw; out-of-range numbers are `INVALID`.
 - Webhook replay store: keep each digest until max(now, `Timestamp`) + window.
 - `tools/selcom_reference.py`: `verify_webhook` applies both rules.
@@ -34,5 +36,6 @@ First release of the shared spec for the community Selcom clients.
 - Test vectors: `vectors/signing.json` (20 signing cases, 11 must-reject cases) and `vectors/responses/` (131 response scenarios and webhook samples across 17 operations).
 - Python reference implementation and generators under `tools/`, checked in CI.
 
+[0.2.1]: https://github.com/selcom-developers/selcom-spec/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/selcom-developers/selcom-spec/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/selcom-developers/selcom-spec/releases/tag/v0.1.0
