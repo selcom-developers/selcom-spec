@@ -134,6 +134,8 @@ Digest:         m8KyUwdkSqajdVVT3OQqTkeYncbc+INQ+owJI6w1+QI=
 
 The query string is encoded; the signing string is not.
 
+**Note: `&` in a value.** Values are signed as raw text, without encoding. Request signing is unchanged, and the `reserved-characters-*` vectors stay valid. Webhook verification applies additional rules: see [webhooks.md](webhooks.md#verification).
+
 ## Pitfalls
 
 **Field order**
