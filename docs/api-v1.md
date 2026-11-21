@@ -340,4 +340,3 @@ Selcom's samples and parameter tables do not always agree. These notes follow th
 
 - The maximum length and allowed characters of `transid` and `order_id` are not published. Until they are, clients SHOULD keep IDs to 30 characters or fewer, using `A-Z a-z 0-9 -`.
 - Whether `USD` checkout amounts may have cents is not published. Clients accept whole units only.
-- Selcom allowlists the IP addresses that may call the gateway. The error returned to an address that is not on the list is not documented.
