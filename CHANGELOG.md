@@ -12,6 +12,8 @@ All notable changes to this specification are recorded here. The format follows 
 
 - `docs/webhooks.md`: a delivery is `INVALID` when `Signed-Fields` does not include both `order_id` and `transid`, and when any signed name or value contains `&`.
 - `docs/signing.md`: a note that `&` in a request value signs like separate fields, why this is not exploitable for requests, and that request signing is unchanged.
+- Webhook verification: value normalisation before the digest check must be bounded and must not throw; out-of-range numbers are `INVALID`.
+- Webhook replay store: keep each digest until max(now, `Timestamp`) + window.
 - `tools/selcom_reference.py`: `verify_webhook` applies both rules.
 
 ### Added
@@ -20,8 +22,6 @@ All notable changes to this specification are recorded here. The format follows 
 - This changelog.
 
 Clients should add the two rules to their verifiers and refresh their copy of the vectors. Existing samples and `vectors/signing.json` keep their verdicts and values.
-- Webhook verification: value normalisation before the digest check must be bounded and must not throw; out-of-range numbers are `INVALID`.
-- Webhook replay store: keep each digest until max(now, `Timestamp`) + window.
 
 ## [0.1.0] - 2026-11-21
 
