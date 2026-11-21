@@ -2,6 +2,12 @@
 
 All notable changes to this specification are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.3] - 2026-11-21
+
+### Changed
+
+- Documentation changes. Rules and vectors are unchanged.
+
 ## [0.2.2] - 2026-11-21
 
 ### Changed
@@ -42,6 +48,7 @@ First release of the shared spec for the community Selcom clients.
 - Test vectors: `vectors/signing.json` (20 signing cases, 11 must-reject cases) and `vectors/responses/` (131 response scenarios and webhook samples across 17 operations).
 - Python reference implementation and generators under `tools/`, checked in CI.
 
+[0.2.3]: https://github.com/selcom-developers/selcom-spec/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/selcom-developers/selcom-spec/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/selcom-developers/selcom-spec/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/selcom-developers/selcom-spec/compare/v0.1.0...v0.2.0
