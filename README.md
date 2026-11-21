@@ -2,7 +2,7 @@
 
 Shared API notes, rules and test vectors for the community Selcom API clients: Java, Node/TypeScript, framework-agnostic PHP, and a Laravel package.
 
-All four clients are written from scratch under the Apache License 2.0. They must sign requests identically, read results identically, and pass the same test vectors. This repository is the single source of truth for all three. If a client and this repository disagree, the client is wrong, or this repository needs a fix that every client then picks up.
+The community clients are written from scratch under the Apache License 2.0. They must sign requests identically, read results identically, and pass the same test vectors. This repository is the single source of truth for every client. If a client and this repository disagree, the client is wrong, or this repository needs a fix that every client then picks up.
 
 > **Not official.** This project is not affiliated with, endorsed by or supported by Selcom Paytech Ltd. "Selcom" is used only to name the API these clients talk to. For API access, credentials, contracts and support, go to Selcom: the developer portal is at <https://developers.selcommobile.com/>. Where this repository and the portal disagree about the API itself, the portal wins.
 
@@ -12,7 +12,7 @@ All four clients are written from scratch under the Apache License 2.0. They mus
 |---|---|
 | [docs/signing.md](docs/signing.md) | The exact request-signing algorithm, with worked examples and pitfalls |
 | [docs/api-v1.md](docs/api-v1.md) | The operations in scope for v1: checkout and payouts |
-| [docs/results.md](docs/results.md) | Result codes, the five typed statuses, and the retry and idempotency rules |
+| [docs/results.md](docs/results.md) | Result codes, the typed statuses, and the retry and idempotency rules |
 | [docs/webhooks.md](docs/webhooks.md) | Verifying and handling checkout webhooks |
 | [docs/client-requirements.md](docs/client-requirements.md) | What every client must do |
 | [vectors/signing.json](vectors/signing.json) | Signing test vectors (generated) |

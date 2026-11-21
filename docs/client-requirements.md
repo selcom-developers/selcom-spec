@@ -102,6 +102,8 @@ Each client's CI MUST:
 - run the webhook samples in order through one replay store with the clock fixed at `verification.now`, and match each verdict and amount;
 - pin the version of this repository it was tested against (a commit SHA or tag).
 
+**Pin policy.** A client pins a tag of this repository together with its commit, and records both (for example in a `SPEC_VERSION` file). A documentation-only spec release leaves rules and vectors unchanged, so it does not require a client release or a pin bump; a client moves its pin when a release changes rules or vectors.
+
 Each client SHOULD also have a local simulator (no network) covering: success, wrong PIN, failure, timeout before and after sending, `404` on the query, in progress, ambiguous, insufficient balance, a bad signature, and webhooks that arrive late, twice or out of order.
 
 Tests against the real sandbox MUST be opt-in (for example behind an environment variable) and MUST NOT run by default or in pull requests from forks. Credentials come from the environment, never from the repository.
