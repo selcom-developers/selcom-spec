@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  vectors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Signing vectors match the reference (and the known vectors)
+        run: python tools/generate_vectors.py --check
+
+      - name: Response fixtures and webhook samples follow the rules
+        run: python tools/check_fixtures.py
+
+      - name: Regenerating leaves the tree unchanged
+        run: |
+          python tools/generate_vectors.py
+          git diff --exit-code
