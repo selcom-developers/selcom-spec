@@ -11,7 +11,7 @@ The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 | `Authorization` | `SELCOM ` followed by the base64 of the API key's UTF-8 bytes |
 | `Digest-Method` | `HS256` |
 | `Digest` | base64 of HMAC-SHA256 over the signing string, keyed with the API secret |
-| `Timestamp` | the request time, `yyyy-MM-ddTHH:mm:ss±HH:MM`, for example `2026-11-21T10:30:46+03:00` |
+| `Timestamp` | the request time, `yyyy-MM-ddTHH:mm:ss±HH:MM` (or `±HHMM`), for example `2026-11-21T10:30:46+03:00` |
 | `Signed-Fields` | the parameter keys, in send order, joined with `,` and no spaces |
 
 Also send `Accept: application/json`, and `Content-Type: application/json` on POST.
@@ -60,7 +60,7 @@ A flattened key is one or more segments of `A-Z a-z 0-9 _ -` joined by `.`. A ke
 
 ### Timestamp
 
-- Format exactly `yyyy-MM-ddTHH:mm:ss±HH:MM`: four-digit year, seconds, no fractional seconds, and an offset with a colon. `Z` is not accepted: write `+00:00`. `+0300` is not accepted: write `+03:00`.
+- Format `yyyy-MM-ddTHH:mm:ss±HH:MM`: four-digit year, seconds, no fractional seconds, and a numeric offset. Clients generate the colon form (`+03:00`), as in Selcom's documentation. A caller-supplied timestamp may also use the basic form without a colon (`+0300`): Selcom's official Java client sends that form (`yyyy-MM-dd'T'HH:mm:ssZ`) while its PHP client sends the colon form (`date('c')`). It is signed exactly as given (vector `timestamp-offset-without-colon`). `Z` is not accepted: write `+00:00`.
 - Generate it fresh for each request from the current instant. Never reuse one across requests.
 - The `Timestamp` header and the `timestamp=` value in the signing string are the same string, character for character.
 - Clients SHOULD default to the `Africa/Dar_es_Salaam` zone (`+03:00`, no daylight saving) and MAY let the caller choose another. Any offset signs correctly; the gateway rejects requests whose time is too far from its own clock, so keep the host clock synchronised.
@@ -156,7 +156,7 @@ The query string is encoded; the signing string is not.
 
 **Timestamp format**
 - Java's `ISO_OFFSET_DATE_TIME` prints `Z` for UTC and adds fractional seconds when they are not zero. Use the pattern `yyyy-MM-dd'T'HH:mm:ssxxx` on a time truncated to seconds. Lower-case `xxx` prints `+00:00` for UTC; upper-case `XXX` prints `Z`.
-- PHP's `DATE_ATOM` (`Y-m-d\TH:i:sP`) is correct. `DATE_ISO8601` (`O`, no colon) is not.
+- PHP's `DATE_ATOM` (`Y-m-d\TH:i:sP`) gives the default colon form. `DATE_ISO8601` (`O`, no colon) also signs correctly, but clients should generate the colon form.
 - In JavaScript, `toISOString()` is always UTC with milliseconds and `Z`. Build the string yourself.
 - Do not share a formatter instance across threads where the formatter is not thread-safe (`SimpleDateFormat`).
 
