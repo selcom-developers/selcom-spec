@@ -16,7 +16,17 @@ The Java, Node/TypeScript, PHP and Laravel clients differ in idiom, not in behav
 - Configuration holds the API key, the API secret and the vendor (till) ID. Payout operations also need the float PIN. A merchant MAY use separate credentials for checkout and for payouts; clients SHOULD allow a second credential set for checkout.
 - A missing secret, key or vendor fails at construction time, not on the first request. The secret and PIN MUST NOT appear in `toString()`, `__debugInfo()`, `inspect()` or exception messages.
 - The Laravel package reads its settings from the environment through a published config file and follows the same rules: no default environment.
-- Selcom allowlists the IP addresses allowed to call the gateway. Document this in the README of each client; it is the usual reason a first sandbox call fails.
+- Selcom whitelists the IP addresses allowed to call the gateway. Every client README MUST include the section below, in substance.
+
+#### IP whitelisting (text for client READMEs)
+
+Selcom's gateway accepts requests only from server IP addresses that Selcom has whitelisted (allowlisted) for your account. Sandbox and production are whitelisted separately.
+
+- Before your first call, send Selcom the public outbound (egress) IP address of every server that will call the API, for each environment you use.
+- Hosts without a fixed outbound address (serverless functions, autoscaling containers, many platform defaults, home or office connections) need a static egress IP, for example through a NAT gateway or a proxy.
+- When servers or hosting change, ask Selcom to update the list before you move traffic.
+- A request from an address that is not whitelisted is rejected by the gateway, and Selcom does not document the exact response. If your first sandbox call fails, check the whitelisting first. Treat such a rejection as a configuration problem, never as a payment outcome, and never pay again because of it.
+
 
 ## Timeouts
 
