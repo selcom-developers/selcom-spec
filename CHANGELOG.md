@@ -20,6 +20,8 @@ All notable changes to this specification are recorded here. The format follows 
 - This changelog.
 
 Clients should add the two rules to their verifiers and refresh their copy of the vectors. Existing samples and `vectors/signing.json` keep their verdicts and values.
+- Webhook verification: value normalisation before the digest check must be bounded and must not throw; out-of-range numbers are `INVALID`.
+- Webhook replay store: keep each digest until max(now, `Timestamp`) + window.
 
 ## [0.1.0] - 2026-11-21
 
