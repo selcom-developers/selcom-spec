@@ -27,7 +27,7 @@ from urllib.parse import quote
 # Signing
 # --------------------------------------------------------------------------
 
-TIMESTAMP_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$")
+TIMESTAMP_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}$")
 KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
 MAX_SAFE_INTEGER = 2**53 - 1
 METHODS = ("GET", "POST", "DELETE")
@@ -103,7 +103,7 @@ def flatten(params: Mapping[str, Any]) -> list[tuple[str, Any]]:
 
 def check_timestamp(timestamp: str) -> None:
     if not isinstance(timestamp, str) or not TIMESTAMP_PATTERN.match(timestamp):
-        raise SigningError("INVALID_TIMESTAMP", f"{timestamp!r} is not yyyy-MM-ddTHH:mm:ss+HH:MM")
+        raise SigningError("INVALID_TIMESTAMP", f"{timestamp!r} is not yyyy-MM-ddTHH:mm:ss+HH:MM or +HHMM")
     datetime.fromisoformat(timestamp)  # rejects impossible dates such as month 13
 
 
